@@ -18,7 +18,7 @@ app.use(cors({
 app.use(express.json());
 
 // 连接到 MongoDB 数据库
-mongoose.connect('mongodb+srv://financewang:Wang.890707@cluster0.zlwhf.mongodb.net/blog?retryWrites=true&w=majority', {
+mongoose.connect(process.env.MONGO_URI || 'mongodb+srv://financewang:Wang.890707@cluster0.zlwhf.mongodb.net/blog?retryWrites=true&w=majority', {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 })
@@ -42,6 +42,7 @@ app.post('/api/auth/register', async (req, res) => {
 
     res.status(201).json({ message: '注册成功' });
   } catch (err) {
+    console.error('注册错误:', err);
     res.status(500).json({ message: '服务器错误' });
   }
 });
@@ -63,12 +64,13 @@ app.post('/api/auth/login', async (req, res) => {
 
     const token = jwt.sign(
       { userId: user._id },
-      process.env.JWT_SECRET, // 使用环境变量
+      process.env.JWT_SECRET || 'default_secret_key',
       { expiresIn: '1h' }
     );
 
     res.json({ token });
   } catch (err) {
+    console.error('登录错误:', err);
     res.status(500).json({ message: '服务器错误' });
   }
 });
@@ -80,6 +82,7 @@ app.post('/api/posts', async (req, res) => {
     await post.save();
     res.status(201).send(post);
   } catch (err) {
+    console.error('创建文章错误:', err);
     res.status(400).send(err.message);
   }
 });
@@ -90,6 +93,7 @@ app.get('/api/posts', async (req, res) => {
     const posts = await Post.find();
     res.status(200).send(posts);
   } catch (err) {
+    console.error('获取文章错误:', err);
     res.status(500).send(err.message);
   }
 });
@@ -105,6 +109,7 @@ app.post('/api/posts/:id/like', async (req, res) => {
     await post.save();
     res.status(200).json(post);
   } catch (err) {
+    console.error('点赞错误:', err);
     res.status(500).json({ message: '点赞失败' });
   }
 });
@@ -120,6 +125,7 @@ app.post('/api/posts/:id/comments', async (req, res) => {
     await post.save();
     res.status(200).json(post);
   } catch (err) {
+    console.error('评论错误:', err);
     res.status(500).json({ message: '评论失败' });
   }
 });
