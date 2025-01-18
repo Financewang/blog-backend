@@ -8,19 +8,19 @@ const User = require('./models/User');
 
 const app = express();
 
-// 配置 CORS，指定你的前端部署地址
+// 配置 CORS
 app.use(cors({
-  origin: ['http://localhost:3000', 'https://blog-backend-blond-delta.vercel.app'], // 替换为你的后端地址
+  origin: ['http://localhost:3000', 'https://your-frontend-domain.vercel.app'], // 替换为你的前端地址
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  credentials: true
+  credentials: true,
 }));
 
 app.use(express.json());
 
 // 连接到 MongoDB 数据库
-mongoose.connect('mongodb+srv://financewang:Wang.890707@cluster0.zlwhf.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0', {
+mongoose.connect('mongodb+srv://financewang:Wang.890707@cluster0.zlwhf.mongodb.net/blog?retryWrites=true&w=majority', {
   useNewUrlParser: true,
-  useUnifiedTopology: true
+  useUnifiedTopology: true,
 })
   .then(() => console.log('Connected to MongoDB Atlas'))
   .catch(err => console.error('Failed to connect to MongoDB Atlas', err));
@@ -63,7 +63,7 @@ app.post('/api/auth/login', async (req, res) => {
 
     const token = jwt.sign(
       { userId: user._id },
-      process.env.JWT_SECRET || 'your_secret_key',
+      process.env.JWT_SECRET, // 使用环境变量
       { expiresIn: '1h' }
     );
 
