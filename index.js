@@ -10,7 +10,7 @@ const app = express();
 
 // 配置 CORS
 app.use(cors({
-  origin: ['http://localhost:3000', 'https://your-frontend-domain.vercel.app'], // 替换为你的前端地址
+  origin: ['http://localhost:3000', 'https://blog-backend-blond-delta.vercel.app'],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true,
 }));
