@@ -1,0 +1,7 @@
+POST http://localhost:5000/api/posts
+Content-Type: application/json
+
+{
+    "title": "My First Post",
+    "content": "This is the content of my first blog post."
+}
