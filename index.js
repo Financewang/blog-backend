@@ -18,9 +18,9 @@ app.use(cors({
 app.use(express.json());
 
 // 连接到 MongoDB 数据库
-mongoose.connect(process.env.MONGO_URI || 'mongodb+srv://financewang:Wang.890707@cluster0.zlwhf.mongodb.net/blog?retryWrites=true&w=majority', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
+mongoose.connect('mongodb+srv://financewang:Wang.890707@cluster0.zlwhf.mongodb.net/blog', {
+  retryWrites: true,
+  w: 'majority'
 })
   .then(() => console.log('Connected to MongoDB Atlas'))
   .catch(err => console.error('Failed to connect to MongoDB Atlas', err));
