@@ -4,8 +4,8 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs'); // 改为使用 bcryptjs
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
-const Post = require('./models/Post');
-const User = require('./models/User');
+const Post = require('./models/post.js');
+const User = require('./models/user.js');
 
 const app = express();
 
