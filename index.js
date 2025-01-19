@@ -1,3 +1,4 @@
+require('dotenv').config(); // 加载 .env 文件中的环境变量
 const express = require('express');
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
@@ -18,7 +19,9 @@ app.use(cors({
 app.use(express.json());
 
 // 连接到 MongoDB 数据库
-mongoose.connect('mongodb+srv://financewang:Wang.890707@cluster0.zlwhf.mongodb.net/blog', {
+mongoose.connect(process.env.MONGO_URI, { // 使用 .env 中的 MONGO_URI
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
   retryWrites: true,
   w: 'majority'
 })
@@ -64,7 +67,7 @@ app.post('/api/auth/login', async (req, res) => {
 
     const token = jwt.sign(
       { userId: user._id },
-      process.env.JWT_SECRET || 'default_secret_key',
+      process.env.JWT_SECRET || 'default_secret_key', // 使用 .env 中的 JWT_SECRET
       { expiresIn: '1h' }
     );
 
@@ -136,5 +139,5 @@ app.get('/', (req, res) => {
 });
 
 // 启动服务器
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5000; // 使用 .env 中的 PORT
 app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
