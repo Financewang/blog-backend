@@ -1,7 +1,7 @@
 require('dotenv').config(); // 加载 .env 文件中的环境变量
 const express = require('express');
 const mongoose = require('mongoose');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs'); // 改为使用 bcryptjs
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
 const Post = require('./models/Post');
@@ -38,7 +38,8 @@ app.post('/api/auth/register', async (req, res) => {
       return res.status(400).json({ message: '用户名已存在' });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
 
     const newUser = new User({ username, password: hashedPassword });
     await newUser.save();
