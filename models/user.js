@@ -1,31 +1,22 @@
 const mongoose = require('mongoose');
-const bcryptjs = require('bcryptjs'); // 改为使用 bcryptjs
+// 移除 bcryptjs 引入
 
-// 定义用户模型的 Schema
 const UserSchema = new mongoose.Schema({
-  username: { type: String, required: true, unique: true }, // 用户名，必填
-  password: { type: String, required: true } // 密码
-}, { timestamps: true }); // 自动生成创建和更新的时间字段
+  username: { type: String, required: true, unique: true },
+  password: { type: String, required: true }
+}, { timestamps: true });
 
-// 密码加密中间件
-UserSchema.pre('save', async function (next) {
-  // 如果密码没有修改，跳过加密
-  if (!this.isModified('password')) {
-    return next();
-  }
+// 移除密码加密中间件
 
-  try {
-    // 生成盐值
-    const salt = await bcryptjs.genSalt(10);
-    // 使用盐值对密码进行加密
-    const hashedPassword = await bcryptjs.hash(this.password, salt);
-    // 保存加密后的密码
-    this.password = hashedPassword;
-    next();
-  } catch (error) {
-    return next(error);
-  }
-});
+// 修改为简单的密码比较方法
+UserSchema.methods.comparePassword = async function(candidatePassword) {
+  console.log('验证密码:');
+  console.log('输入的密码:', candidatePassword);
+  console.log('存储的密码:', this.password);
+  
+  const isMatch = candidatePassword === this.password;
+  console.log('密码匹配结果:', isMatch);
+  return isMatch;
+};
 
-// 导出模型
 module.exports = mongoose.model('User', UserSchema);

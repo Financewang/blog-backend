@@ -1,30 +1,65 @@
-require('dotenv').config(); // 加载 .env 文件中的环境变量
+// 加载 dotenv 并指定路径
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '.env.local') });
+
 const express = require('express');
 const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs'); // 改为使用 bcryptjs
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
-const Post = require('./models/post.js');
-const User = require('./models/user.js');
+const Post = require('./models/post.js'); // 确保文件路径正确
+const User = require('./models/user.js'); // 确保文件路径正确
 
 const app = express();
 
-// 配置 CORS
-app.use(cors({
-  origin: ['http://localhost:3000', 'https://blog-backend-blond-delta.vercel.app'],
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  credentials: true,
-}));
+// 调试环境变量加载
+console.log('🔍 环境变量加载检查：');
+console.log('MONGO_URI:', process.env.MONGO_URI || '未定义');
+console.log('JWT_SECRET:', process.env.JWT_SECRET || '未定义');
+console.log('PORT:', process.env.PORT || '未定义');
 
+// 检查环境变量
+if (!process.env.MONGO_URI || !process.env.JWT_SECRET) {
+  console.error('❌ Error: 环境变量 MONGO_URI 或 JWT_SECRET 未定义');
+  process.exit(1);
+}
+
+// 配置 CORS
+app.use(
+  cors({
+    origin: '*',
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  })
+);
+
+// 配置 Express 解析 JSON 数据
 app.use(express.json());
 
+// 添加请求日志中间件
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.path}`);
+  next();
+});
+
+// 添加错误处理中间件
+app.use((err, req, res, next) => {
+  console.error('Error:', err);
+  res.status(500).json({ message: '服务器内部错误' });
+});
+
 // 连接到 MongoDB 数据库
-mongoose.connect(process.env.MONGO_URI, { // 使用 .env 中的 MONGO_URI
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
-  .then(() => console.log('Connected to MongoDB Atlas'))
-  .catch(err => console.error('Failed to connect to MongoDB Atlas', err));
+mongoose
+  .connect(process.env.MONGO_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    retryWrites: true,
+    w: 'majority',
+  })
+  .then(() => console.log('✅ Connected to MongoDB Atlas'))
+  .catch((err) => {
+    console.error('❌ Failed to connect to MongoDB Atlas:', err.message);
+    process.exit(1);
+  });
 
 // 用户注册接口
 app.post('/api/auth/register', async (req, res) => {
@@ -36,15 +71,12 @@ app.post('/api/auth/register', async (req, res) => {
       return res.status(400).json({ message: '用户名已存在' });
     }
 
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    const newUser = new User({ username, password: hashedPassword });
+    const newUser = new User({ username, password });
     await newUser.save();
-
+    console.log(`✅ 用户 ${username} 注册成功`);
     res.status(201).json({ message: '注册成功' });
   } catch (err) {
-    console.error('注册错误:', err);
+    console.error('❌ 注册错误:', err);
     res.status(500).json({ message: '服务器错误' });
   }
 });
@@ -59,20 +91,19 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(400).json({ message: '用户不存在' });
     }
 
-    const validPassword = await bcrypt.compare(password, user.password);
-    if (!validPassword) {
+    if (user.password !== password) {
+      console.log('❌ 密码错误');
       return res.status(400).json({ message: '密码错误' });
     }
 
-    const token = jwt.sign(
-      { userId: user._id },
-      process.env.JWT_SECRET || 'default_secret_key', // 使用 .env 中的 JWT_SECRET
-      { expiresIn: '1h' }
-    );
+    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
+      expiresIn: '1h',
+    });
 
+    console.log(`✅ 用户 ${username} 登录成功`);
     res.json({ token });
   } catch (err) {
-    console.error('登录错误:', err);
+    console.error('❌ 登录错误:', err);
     res.status(500).json({ message: '服务器错误' });
   }
 });
@@ -82,9 +113,10 @@ app.post('/api/posts', async (req, res) => {
   try {
     const post = new Post(req.body);
     await post.save();
+    console.log(`✅ 文章创建成功: ${post.title}`);
     res.status(201).send(post);
   } catch (err) {
-    console.error('创建文章错误:', err);
+    console.error('❌ 创建文章错误:', err);
     res.status(400).send(err.message);
   }
 });
@@ -92,10 +124,11 @@ app.post('/api/posts', async (req, res) => {
 // 获取所有文章 API
 app.get('/api/posts', async (req, res) => {
   try {
-    const posts = await Post.find();
+    const posts = await Post.find().sort({ createdAt: -1 });
+    console.log('✅ 获取文章列表成功');
     res.status(200).send(posts);
   } catch (err) {
-    console.error('获取文章错误:', err);
+    console.error('❌ 获取文章错误:', err);
     res.status(500).send(err.message);
   }
 });
@@ -109,9 +142,10 @@ app.post('/api/posts/:id/like', async (req, res) => {
     }
     post.likes += 1;
     await post.save();
+    console.log(`✅ 文章 ${post.title} 点赞成功`);
     res.status(200).json(post);
   } catch (err) {
-    console.error('点赞错误:', err);
+    console.error('❌ 点赞错误:', err);
     res.status(500).json({ message: '点赞失败' });
   }
 });
@@ -125,9 +159,10 @@ app.post('/api/posts/:id/comments', async (req, res) => {
     }
     post.comments.push({ text: req.body.text });
     await post.save();
+    console.log(`✅ 文章 ${post.title} 评论成功`);
     res.status(200).json(post);
   } catch (err) {
-    console.error('评论错误:', err);
+    console.error('❌ 评论错误:', err);
     res.status(500).json({ message: '评论失败' });
   }
 });
@@ -138,5 +173,7 @@ app.get('/', (req, res) => {
 });
 
 // 启动服务器
-const PORT = process.env.PORT || 5000; // 使用 .env 中的 PORT
-app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () =>
+  console.log(`🚀 Server running on http://localhost:${PORT}`)
+);
